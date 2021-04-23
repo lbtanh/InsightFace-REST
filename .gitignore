@@ -10,6 +10,7 @@
 /src/api/insightface
 /models
 /crops
+/src/models
 /test_images
 /deploy_debug.sh
 TODO.md

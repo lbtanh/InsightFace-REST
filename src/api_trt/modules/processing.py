@@ -7,11 +7,23 @@ import base64
 import time
 import os
 import logging
+from celery import Task
 
 import numpy as np
 import cv2
+from os.path import dirname, join, realpath, isfile
+import sys
+
+CURRENT_DIR = dirname(realpath(__file__))
+PARENT_DIR = dirname(dirname(CURRENT_DIR))
+
+sys.path.insert(0, PARENT_DIR)
+
 
 from .face_model import FaceAnalysis, Face
+
+
+# from workers.worker import celery_
 
 
 def dl_image(path, headers=None):
@@ -143,7 +155,7 @@ def serialize_face(face: Face, return_face_data: bool, return_landmarks: bool = 
     return _face_dict
 
 
-class Processing:
+class Processing(Task):
 
     def __init__(self, det_name: str = 'retinaface_r50_v1', rec_name: str = 'arcface_r100_v1',
                  ga_name: str = 'genderage_v1', device: str = 'cuda', max_size: List[int] = None,
@@ -166,7 +178,7 @@ class Processing:
             if face.get('traceback') is None:
                 face = Face(facedata=face.get('data'))
                 yield face
-
+    
     def embed_crops(self, images, extract_embedding: bool = True, extract_ga: bool = True):
         serializer = Serializer()
         t0 = time.time()
@@ -194,7 +206,8 @@ class Processing:
         took = time.time() - t0
         output['took'] = took
         return output
-
+    
+    
     async def embed(self, images: Dict, max_size: List[int] = None, threshold: float = 0.6,
                     return_face_data: bool = False, extract_embedding: bool = True,
                     extract_ga: bool = True, return_landmarks: bool = False):
@@ -232,7 +245,8 @@ class Processing:
         took = time.time() - t0
         output['took'] = took
         return output
-
+    
+    
     async def extract(self, images: Dict[str, list], max_size: List[int] = None, threshold: float = 0.6,
                       embed_only: bool = False, return_face_data: bool = False, extract_embedding: bool = True,
                       extract_ga: bool = True, return_landmarks: bool = False, api_ver: str = "1"):
@@ -257,7 +271,8 @@ class Processing:
                                       )
 
             return serializer.serialize(output, api_ver=api_ver)
-
+    
+    
     async def draw(self, images: Dict[str, list], threshold: float = 0.6,
                    draw_landmarks: bool = True):
 

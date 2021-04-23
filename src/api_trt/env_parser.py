@@ -44,6 +44,7 @@ class EnvConfigs:
     def __init__(self):
         self.log_level = os.getenv('LOG_LEVEL', 'INFO')
         self.port = os.getenv('PORT', 18080)
+        
 
         self.models = Models()
         self.defaults = Defaults()

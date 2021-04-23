@@ -55,7 +55,7 @@ def extract_vecs(task):
             save_file(facedata, f'crops/{int(norm)}_{prob}_{face["age"]}_{time.time()}.jpg')
 
 
-ims = 'test_images'
+ims = 'images'
 
 
 def to_chunks(iterable, size=10):
@@ -66,11 +66,11 @@ def to_chunks(iterable, size=10):
 
 if __name__ == "__main__":
 
-    server = 'http://localhost:18081/extract'
+    server = 'http://localhost:5151/extract'
 
     speeds = []
-    for i in range(0, 2):
-        files = glob.glob(ims + '*/*.jpg')
+    for i in range(0, 1):
+        files = glob.glob(ims + '*/*.jpeg')
         print(f"Total files detected: {len(files)}")
         multiply = 1
         target = [file2base64(fl) for fl in files] * multiply

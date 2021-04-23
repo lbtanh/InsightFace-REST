@@ -49,7 +49,7 @@ models = {
 def prepare_backend(model_name, backend_name, im_size: List[int] = None,
                     max_batch_size: int = 1,
                     force_fp16: bool = False,
-                    download_model: bool = True,
+                    download_model: bool = False,
                     config: Configs = None):
     """
     Check if ONNX, MXNet and TensorRT models exist and download/create them otherwise.

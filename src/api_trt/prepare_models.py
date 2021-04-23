@@ -21,8 +21,8 @@ def prepare_models(root_dir: str = '/models'):
     det_name = os.getenv("DET_NAME", "retinaface_mnet025_v2")
     ga_name = os.getenv("GA_NAME", "genderage_v1")
 
-    force_fp16 = tobool(os.getenv('FORCE_FP16', False))
-
+    force_fp16 = tobool(os.getenv('FORCE_FP16', True)) #False
+ 
     max_size = parse_size(os.getenv('MAX_SIZE'))
 
     if max_size is None:

@@ -4,6 +4,7 @@ from typing import Optional, List
 
 import pydantic
 from fastapi import FastAPI
+from api.product import product_router
 from pydantic import BaseModel
 from fastapi.encoders import jsonable_encoder
 from starlette.staticfiles import StaticFiles
@@ -18,7 +19,18 @@ from fastapi.openapi.docs import (
 from modules.processing import Processing
 from env_parser import EnvConfigs
 
-__version__ = "0.5.9.8"
+__version__ = "0.5"
+
+
+try: 
+    from workers.worker import move_to_next_stage, get_embedding
+    from config import stages, REDIS_STORE_CONN_URI, STAGING_TIME
+    # from workers.worker import celery
+except Exception as ex:
+    print(ex)    
+
+
+
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 
@@ -39,15 +51,25 @@ processing = Processing(det_name=configs.models.det_name, rec_name=configs.model
                         backend_name=configs.models.backend_name,
                         force_fp16=configs.models.fp16)
 
-app = FastAPI(
-    title="InsightFace-REST",
-    description="FastAPI wrapper for InsightFace API.",
-    version=__version__,
-    docs_url=None,
-    redoc_url=None
+
+
+# app = FastAPI(
+#     title="DLVN-FACEAPI",
+#     description="FastAPI for Face Recogniton.",
+#     version=__version__,
+#     docs_url="/",
+#     redoc_url=None
+# )
+
+
+app = FastAPI(title="Face API", docs_url="/", version="1.0.0")
+app.include_router(
+    product_router,
+    prefix="/product",
+    tags=["Product"],
 )
 
-example_img = 'test_images/Stallone.jpg'
+example_img = 'test_images/0001.jpeg'
 
 
 class Images(BaseModel):
@@ -108,6 +130,23 @@ class BodyDraw(BaseModel):
                                             description='Output data serialization format. Currently only version "1" \
                                             is supported')
 
+
+
+@app.post('/extract_', tags=['Detection & recognition'])
+async def extract_(data: BodyExtract):
+    images = jsonable_encoder(data.images)
+    output = get_embedding.apply_async((images, data.max_size, data.return_face_data,
+                                      data.embed_only, data.extract_embedding,
+                                      data.threshold, data.extract_ga,
+                                      data.return_landmarks, data.api_ver), )
+    print("output: ", output)
+    return UJSONResponse(output)
+
+@app.post('/test', tags=['Detection & recognition'])
+async def test(name: str):
+    for i in range(0, 5):
+        move_to_next_stage.apply_async((name, stages[i]), countdown=i* 10)
+    return True
 
 @app.post('/extract', tags=['Detection & recognition'])
 async def extract(data: BodyExtract):
@@ -211,3 +250,10 @@ async def redoc_html():
         title=app.title + " - ReDoc",
         redoc_js_url="/static/redoc.standalone.js",
     )
+
+
+
+
+
+
+

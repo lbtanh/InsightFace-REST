@@ -1,0 +1,114 @@
+version: "3"
+services:
+    krabbitmq:
+        hostname: krabbitmq
+        image: rabbitmq:latest
+        environment:
+            - RABBITMQ_DEFAULT_USER=guest
+            - RABBITMQ_DEFAULT_PASS=guest
+        ports:
+            - "5172:5672"
+    worker:
+        build:
+            context: .
+            dockerfile: celery.Dockerfile
+        # image: anhlbt/test-celery:v1
+        environment:
+            - REDIS_HOST=kredis
+            - REDIS_PORT=5179
+            - REDIS_CELERY_DB_INDEX=10
+            - REDIS_STORE_DB_INDEX=0
+            - RABBITMQ_HOST=krabbitmq
+            - RABBITMQ_USERNAME=guest
+            - RABBITMQ_PASSWORD=guest
+            - RABBITMQ_PORT=5672
+        depends_on:
+            - krabbitmq
+            - kredis
+        command: celery worker -A workers.worker --loglevel=info --logfile=%p.log -n anhlbt@%h # -E 
+    kredis:
+        hostname: kredis
+        image: redis:latest
+        ports:
+            - "5179:6379"
+    # api:
+    #     build:
+    #         context: .
+    #         dockerfile: api.Dockerfile
+    #     # image: anhlbt/test-api:v1
+    #     environment:
+    #         - REDIS_HOST=kredis
+    #         - REDIS_PORT=6379
+    #         - REDIS_CELERY_DB_INDEX=10
+    #         - REDIS_STORE_DB_INDEX=0
+    #         - RABBITMQ_HOST=krabbitmq
+    #         - RABBITMQ_USERNAME=guest
+    #         - RABBITMQ_PASSWORD=guest
+    #         - RABBITMQ_PORT=5672
+    #     volumes:
+    #         - ./api_trt:/usr/src/
+    #     depends_on:
+    #         - worker
+    #     ports:
+    #         - "5001:5001"
+    #     command: gunicorn --bind 0.0.0.0:5001 main_test:app -w 4 -k uvicorn.workers.UvicornWorker --reload --access-logfile - --error-logfile - --log-level info           
+    insightface:
+        build:
+            context: .
+            dockerfile: Dockerfile_cpu
+        environment:
+            - REDIS_HOST=kredis
+            - REDIS_PORT=6379
+            - REDIS_CELERY_DB_INDEX=10
+            - REDIS_STORE_DB_INDEX=0
+            - RABBITMQ_HOST=krabbitmq
+            - RABBITMQ_USERNAME=guest
+            - RABBITMQ_PASSWORD=guest
+            - RABBITMQ_PORT=5672
+            - LOG_LEVEL=INFO
+            - PYTHONUNBUFFERED=0
+            - PORT=5000
+            - NUM_WORKERS=12
+            - INFERENCE_BACKEND=onnx
+            - DET_NAME=retinaface_mnet025_v2
+            - DET_THRESH=0.6
+            - REC_NAME=arcface_r100_v1
+            - REC_IGNORE=False
+            - GA_NAME=genderage_v1
+            - GA_IGNORE=False
+            - KEEP_ALL=True
+            - MAX_SIZE=640,640
+            - DEF_RETURN_FACE_DATA=False
+            - DEF_EXTRACT_EMBEDDING=True
+            - DEF_EXTRACT_GA=True
+            - DEF_API_VER=1
+        volumes:
+            - ./api_trt:/usr/src/app/
+            - ./models:/usr/src/models/
+        depends_on:
+            - worker
+        ports:
+            - "5000:5000"
+        expose:
+            - "5672"
+            - "6379"
+        # command: bash -c "app/entrypoint.sh"       
+    flower:
+        build:
+            context: .
+            dockerfile: flower.Dockerfile
+        # image: anhlbt/test-flower:v1
+        environment:
+            - REDIS_HOST=kredis
+            - REDIS_PORT=6379
+            - REDIS_CELERY_DB_INDEX=10
+            - REDIS_STORE_DB_INDEX=0
+            - RABBITMQ_HOST=krabbitmq
+            - RABBITMQ_USERNAME=guest
+            - RABBITMQ_PASSWORD=guest
+            - RABBITMQ_PORT=5672
+        ports:
+            - 5155:5555
+        depends_on:
+            - krabbitmq
+            - kredis   

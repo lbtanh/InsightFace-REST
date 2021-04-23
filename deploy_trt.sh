@@ -7,7 +7,7 @@ TAG='v0.5.9.8'
 log_level=INFO
 
 # When starting multiple containers this will be port assigned to first container
-START_PORT=18081
+START_PORT= 5150 #18081
 
 # Set number of GPU's availiable in your system
 n_gpu=1

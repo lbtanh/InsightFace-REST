@@ -1,0 +1,55 @@
+
+add some address in /etc/hosts/ when the errors appear
+
+#build
+docker build -t test-celery:v1 -f src/celery.Dockerfile src/.
+docker build -t test-api:v1 -f src/api.Dockerfile src/.
+docker build -t test-flower:v1 -f src/flower.Dockerfile src/.
+
+#push
+docker tag 0deb1d925f68 anhlbt/test-celery:v1
+docker push anhlbt/test-celery:v1
+
+docker tag test-api:v1 anhlbt/test-api:v1
+docker push anhlbt/test-api:v1
+
+docker tag test-flower:v1 anhlbt/test-flower:v1
+docker push anhlbt/test-flower:v1
+
+docker tag insightface-rest:v0.5.9.8-cpu anhlbt/insightface-rest:v0.5.9.8-cpu
+docker push anhlbt/insightface-rest:v0.5.9.8-cpu
+
+
+#get logs
+docker logs cotainer
+
+docker exec -it cotainer bash
+
+
+docker run  -p $START_PORT:5150\
+    -d\
+    -e LOG_LEVEL=$log_level\
+    -e PYTHONUNBUFFERED=0\
+    -e PORT=5150\
+    -e NUM_WORKERS=$n_workers\
+    -e INFERENCE_BACKEND=onnx\
+    -e DET_NAME=$det_model\
+    -e DET_THRESH=$det_thresh\
+    -e REC_NAME=$rec_model\
+    -e REC_IGNORE=$rec_ignore\
+    -e GA_NAME=$ga_model\
+    -e GA_IGNORE=$ga_ignore\
+    -e KEEP_ALL=True\
+    -e MAX_SIZE=$max_size\
+    -e DEF_RETURN_FACE_DATA=$return_face_data\
+    -e DEF_EXTRACT_EMBEDDING=$extract_embeddings\
+    -e DEF_EXTRACT_GA=$detect_ga\
+    -e DEF_API_VER='1'\
+    -v $PWD/models:/models\
+    -v $PWD/src/api_trt:/app\
+    --health-cmd='curl -f http://0.0.0.0:5000/info || exit 1'\
+    --health-interval=1m\
+    --health-timeout=10s\
+    --health-retries=3\
+    --name=$name\
+    $IMAGE:$TAG

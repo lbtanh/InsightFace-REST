@@ -5,15 +5,25 @@ ENV LANG=C.UTF-8
 
 RUN apt-get update && apt-get install -y libgl1-mesa-glx protobuf-compiler libprotoc-dev libb64-0d libglib2.0-0 \
     libgomp1 gcc curl && rm -rf /var/lib/apt/lists/*
-ENV PIP_INSTALL="python -m pip --no-cache-dir install --upgrade"
+
+#ENV PIP_INSTALL="python -m pip --no-cache-dir install --upgrade"
+ENV PIP_INSTALL="python -m pip install --upgrade"
+
 RUN $PIP_INSTALL mxnet==1.6.0 insightface fastapi uvicorn ujson numba aiofiles
 RUN $PIP_INSTALL onnx==1.7.0
-RUN $PIP_INSTALL onnx-simplifier
+RUN $PIP_INSTALL onnx-simplifier redis celery gunicorn
 RUN $PIP_INSTALL nvidia-pyindex && pip install tritonclient[http,grpc]
 
 
 WORKDIR /app
+COPY requirements-api.txt /app/
+
 COPY api_trt /app
+COPY models /models
+
+RUN pip install -r requirements-api.txt
 
 ENTRYPOINT [ "bash" ]
 CMD ["entrypoint.sh"]
+
+

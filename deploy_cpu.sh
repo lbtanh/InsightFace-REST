@@ -7,7 +7,7 @@ TAG='v0.5.9.8-cpu'
 log_level=INFO
 
 # When starting multiple containers this will be port assigned to first container
-START_PORT=18081
+START_PORT=5150   #18080 = 5150, 18081   = 5151
 
 
 # Set how many app instances you want to run per GPU, ensure you have enough GPU
@@ -75,11 +75,11 @@ docker stop $name;
 docker rm $name;
 echo --- Starting container $name  with CPU  at port $START_PORT;
 
-docker run  -p $START_PORT:18080\
+docker run  -p $START_PORT:5150\
     -d\
     -e LOG_LEVEL=$log_level\
     -e PYTHONUNBUFFERED=0\
-    -e PORT=18080\
+    -e PORT=5150\
     -e NUM_WORKERS=$n_workers\
     -e INFERENCE_BACKEND=onnx\
     -e DET_NAME=$det_model\
@@ -96,7 +96,7 @@ docker run  -p $START_PORT:18080\
     -e DEF_API_VER='1'\
     -v $PWD/models:/models\
     -v $PWD/src/api_trt:/app\
-    --health-cmd='curl -f http://localhost:18080/info || exit 1'\
+    --health-cmd='curl -f http://0.0.0.0:5000/info || exit 1'\
     --health-interval=1m\
     --health-timeout=10s\
     --health-retries=3\
